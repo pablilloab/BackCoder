@@ -1,5 +1,6 @@
 import fs from "fs";
 import crypto from "crypto";
+import Producto from "../classes/Producto.js";
 
 const path = "./fs/productos.json"
 
@@ -16,7 +17,6 @@ class ProductManager {
             console.log("Inicio archivo");
             const data = await fs.promises.readFile(path, 'utf8');
             this.products = JSON.parse(data);
-            console.log(this.products);
 
         } catch (error) {
            
@@ -40,7 +40,11 @@ class ProductManager {
     }
 
     //funcnion que agrega un producto
-    addProduct = async (product) => {
+    addProduct = async (title, description, price, thumbnails, code, stock, status, category) => {
+
+        const product = new Producto(title, description, price, thumbnails, code, stock, status, category); // Crear un nuevo objeto Producto
+        product.id = crypto.randomBytes(12).toString("hex");
+
         // validar que no se repita el campo code
         if (this.products.some(p => p.code === product.code)) {
             console.log("El código se repite");
@@ -48,11 +52,11 @@ class ProductManager {
         } 
 
         if (Object.values(product).includes(undefined)){
-            console.log("Todos los campos deben estar informados");
+            console.log("Todos los campos deben estar informados" + JSON.stringify(product));
             return 1 ;
         }
         
-        product.id = crypto.randomBytes(12).toString("hex");
+        
         this.products.push(product);
         console.log("Producto agregado correctamente");   
         
@@ -68,23 +72,35 @@ class ProductManager {
     
     getProductById = async (id) => {
         const product = this.products.find(p => p.id === id);
+        if(!product){
+            return null
+        }
         return product;
     }
 
     //actualizo propiedad de un producto
     updateProduct = async (id, data) =>{
         const index = this.products.findIndex(product => product.id === id);
-        this.products[index]={
-            ...this.products[index],
-            ...data
-        };
+        if(index){
+            this.products[index]={
+                ...this.products[index],
+                ...data
+            };
+            this.saveToFile();
+            return 0;
+        };    
+        return -1; 
+
     }
 
     deleteProduct = async (id) =>{
         const index = this.products.findIndex(product => product.id === id);
-        this.products.splice(index,1);
-
-        console.log("Producto elminado correctamente");        
+        if (index){
+            this.products.splice(index,1);
+            this.saveToFile();
+            return 0;   
+        }
+        return -1;       
     }
 }
 
