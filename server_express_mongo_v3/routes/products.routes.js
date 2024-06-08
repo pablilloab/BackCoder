@@ -1,6 +1,5 @@
 import { Router } from "express";
 import productManager from "../dao/mongoDao/product.dao.js";
-
 //import Producto from "../classes/Producto.js";
 
 const router = Router();
@@ -9,7 +8,7 @@ const router = Router();
 router.get("/products/:pid", getProductById);
 
 //traigo todos los productos o el limite que indico
-router.get("/products",  getProducts);
+router.get("/products", getProducts);
 
 //agrego un producto
 router.post("/products/add", addProduct);
