@@ -6,7 +6,7 @@ import { isLogin } from "../middleware/isLogin.middleware.js";
 
 const router = Router();
 
-router.use("/", isLogin, productsRouter); //le digo al server que use la ruta que importe
+router.use("/", productsRouter); //le digo al server que use la ruta que importe
 router.use("/", cartsRouter);
 router.use("/", sessionRouter)
 

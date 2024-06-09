@@ -3,6 +3,8 @@ import indexRouter from "../routes/index.js";
 import { connectionDB } from "../config/mongo.config.js" ;
 import session from "express-session";
 import MongoStore from "connect-mongo";
+import passport from "passport"
+import initializePassport from "../config/passport.config.js";
 
 const server = express();
 connectionDB();
@@ -27,6 +29,10 @@ server.use(session({
     secret: "TomRiddle",
     resave: true
 }));
+
+server.use(passport.initialize());
+server.use(passport.session());
+initializePassport();
 
 server.use("/", indexRouter);
 

@@ -1,84 +1,78 @@
 import { Router } from "express";
 import userManager from "../dao/mongoDao/user.dao.js";
-import { createHash, isValidPassword } from "../src/utils/hashPassword.js"
+import { createHash, isValidPassword } from "../src/utils/hashPassword.js";
+import passport from "passport";
+import {createToken} from "../src/utils/jwt.js";
 
 const router = Router();
 
-router.post("/users/register", registerUser);
-router.post("/users/login", loginUser);
-router.get("/users/logout", logoutUser)
+router.post("/users/register", (req, res, next) => {
+  passport.authenticate("register", (err, user, info) => {
+    if (err) return next(err);
+    if (!user) return res.status(400).json({ status: "error", msg: info.message });
 
-async function registerUser(req, res) {
-  try {
-    const { first_name, last_name, email, password, age} = req.body;
-    const newUser = {
-      first_name,
-      last_name,
-      email,
-      password: createHash(password),
-      age      
-    }
-    const user = await userManager.addUser(newUser);
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      return res.status(201).json({ status: "success", msg: "Usuario Creado" });
+    });
+  })(req, res, next);
+});
 
-    if (!user) {
-      const error = new Error("El usuario no se pudo registrar");
-      error.status = 404;
-      throw error;
-    }
+router.post("/users/login", (req, res, next) => {
+  passport.authenticate("login", (err, user, info) => {
+    if (err) return next(err);
+    if (!user) return res.status(400).json({ status: "error", msg: info.message });
 
-    return res.status(201).json({ status: "success", paylodad: newUser });
-  } catch (error) {
-    console.log(error);
-    return res.json({ status: 500, resopnse: error.message });
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      return res.status(200).json({ status: "success", payload: req.user });
+    });
+  })(req, res, next);
+});
+
+router.get(
+  "/users/login",
+  passport.authenticate("google", {
+    scope: ["https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"],
+    session: false,
+  })
+);
+
+router.get(
+  "/users/login/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  (req, res) => {
+    res.redirect("/"); // Redirigir después de la autenticación exitosa
   }
-}
+);
 
-async function loginUser(req, res) {
+router.get("/users/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).json({ status: "error", msg: "Error al cerrar sesión" });
+    }
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ status: "error", msg: "Error al destruir la sesión" });
+      }
+      res.status(200).json({ status: "success", msg: "Sesión cerrada" });
+    });
+  });
+});
+
+router.post("/jwt"), async(req, res)=>{
   try {
-    const { email, password } = req.body;
+    const {email, password} = req.body
 
-    //check si el user que intenta hacer el login es el admin
-    if (email === "adminCoder@coder.com" && password === "adminCod3r123") {
-      req.session.user = {
-        email,
-        role: "admin",
-      };
-      return res
-        .status(201)
-        .json({ status: "success", paylodad: req.session.user });
-    }
+    const user = await userManager.getByEmail(email)
+    if(!user || user.password !== passport) return res.status(401).json({status: "error", msg: "usuario o contraseña no validos"});
 
-    const user = await userManager.getByEmail(email);
-    if (!user || !isValidPassword(user, password)) {
-      const error = new Error("Error al loguearse");
-      error.status = 401;
-      throw error;
-    }
+    const token = createToken(user);
 
-    req.session.user = {
-        email,
-        role: "user"
-    }
-    return res.status(200).json({ status: "success", paylodad: req.session.user });
 
+    return res.status(200).json({status:"succes", payload: token})
   } catch (error) {
-    console.log(error);
-    return res.json({ status: 500, resopnse: error.message });
-  }
-}
-
-async function logoutUser(req, res){
-    try {
-        
-        req.session.destroy()       
     
-        return res.status(200).json({ status: "success", message: "Sesión cerrada" });
-
-      } catch (error) {
-        console.log(error);
-        return res.json({ status: 500, resopnse: error.message });
-      }  
+  }
 }
-
-
 export default router;
