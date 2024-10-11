@@ -1,0 +1,53 @@
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+
+    th,
+    td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f4f4f4;
+    }
+</style>
+
+
+<h1>Lista de Productos</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Descripción</th>
+            <th>Miniaturas</th>
+            <th>Código</th>
+            <th>Stock</th>
+            <th>Precio</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each products.docs}}
+        <tr>
+            <td>{{this.title}}</td>
+            <td>{{this.description}}</td>
+            <td>
+                {{#each this.thumbnail}}
+                <img src="{{this}}" alt="{{../title}}" style="width:50px; height:auto; margin-right: 5px;">
+                {{/each}}
+            </td>
+            <td>{{this.code}}</td>
+            <td>{{this.stock}}</td>
+            <td>${{this.price}}</td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>
